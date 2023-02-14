@@ -15,26 +15,38 @@ class UserManagement(Resource):
         # GET method 구현 부분
         """유저 데이터 조회"""
         database = Database()
-        params = request.get_json()
-        id = params['id']
-        password = params['password']
+        id = request.args.get('id')
+        password = request.args.get('password')
         result = {}
 
-        sql = f"SELECT * FROM user WHERE id = '{id}' AND pw = '{password}';"
-        result = database.execute_one(sql)
+        sql = f"SELECT * FROM user WHERE id = '{id}';"
+        result = database.execute_one(sql)        
         
-        database.commit()
-        database.close()
-        
-        #일치하는 id, pw 없는 경우
+        #일치하는 id 없는 경우
         if not result:
-            abort(400, "아이디나 비밀번호 불일치")
-
-        #일치하는 id, pw 존재
-        else :
             return {
-                "nickname": result['nickname']
-            }, 200
+                "message": "해당 유저가 존재하지 않음"
+            }, 400
+
+        #일치하는 id 존재
+        else :
+            sql = f"SELECT * FROM user WHERE id = '{id}' AND pw = '{password}';"
+            result = database.execute_one(sql)
+
+            database.commit()
+            database.close()
+
+            #비밀번호 불일치
+            if not result:
+                return {
+                    "message": "아이디나 비밀번호 불일치"
+                }, 400
+            
+            #유저 조회 가능
+            else:
+                return {
+                    "nickname": result['nickname']
+                }, 200
     
     
     @user.doc(responses={200: '유저 생성 성공'})
